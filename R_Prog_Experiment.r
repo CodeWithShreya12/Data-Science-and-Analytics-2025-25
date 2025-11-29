@@ -1,7 +1,7 @@
 # Install packages
 install.packages(c("tidyverse", "ggridges", "patchwork", 
                    "viridis", "gapminder", "scales", "ggplot2", 
-                   "tidytext", "text", "tm"))
+                   "tidytext", "text", "tm", "textdata"))
 library(tidyverse)
 library(ggridges)
 library(patchwork)
@@ -12,6 +12,7 @@ library(ggplot2)
 library(tidytext)
 library(text)
 library(tm)
+library(textdata)
 
 # Import data and handle missing values - NA
 tourism_data_original <- read.csv("tourism_customer_reviews.csv")
@@ -19,13 +20,13 @@ tourism_data <- na.omit(tourism_data_original)
 
 # Visualize Data - Average rating vs location
 avg_rating <- mean(tourism_data$rating)
-print(tourism_data |>
-        group_by(location) |>
-        summarize(avg_rating = mean(rating)) |>
-        ggplot(aes(x = location, y = avg_rating)) +
-        stat_summary(fun = mean, geom = "bar") +
-        geom_col(fill = "#c2e5eb") +
-        labs(title = "Location vs Rating", x = "Location", y = "Rating"))
+tourism_data |>
+  group_by(location) |>
+  summarize(avg_rating = mean(rating)) |>
+  ggplot(aes(x = location, y = avg_rating)) +
+  stat_summary(fun = mean, geom = "bar") +
+  geom_col(fill = "#c2e5eb") +
+  labs(title = "Location vs Rating", x = "Location", y = "Rating")
 
 # Split data by bad, mid, and good reviews
 tourism_data <- tourism_data |>
@@ -61,5 +62,25 @@ reviews_cleaned <- tm_map(reviews_cleaned, removeWords, stopwords("english"))
 reviews_cleaned <- sapply(reviews_cleaned, as.character)
 reviews_cleaned <- gsub("\\s+", " ", reviews_cleaned)
 reviews_cleaned <- trimws(reviews_cleaned)
-print(reviews_cleaned)
 
+# Cleaned reviews back in data frame
+reviews_cleaned_df <- data.frame(
+  Category = reviews_df$Category,
+  text = reviews_cleaned,
+  stringsAsFactors = FALSE
+)
+
+#-----------------------------------
+#sentiment <- reviews_cleaned_df |>
+#  unnest_tokens(word, text) |>
+#  inner_join(get_sentiments("afinn"), by = "word") |>
+#  group_by(Category) |>
+#  summarize(avg_sentiment = mean(value))
+
+#print(sentiment)
+#------------------------
+sentiment %>%
+  inner_join(get_sentiments("afinn"), by = "word") %>%
+  count(word, sort = TRUE)
+
+print(sentiment)
